@@ -50,9 +50,28 @@
 
     let traitementEnCours = false;
 
+function jouerBip() {
+  try {
+    const audio = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillateur = audio.createOscillator();
+    const volume = audio.createGain();
+
+    oscillateur.connect(volume);
+    volume.connect(audio.destination);
+    oscillateur.frequency.value = 1000;
+    volume.gain.value = 0.2;
+
+    oscillateur.start();
+    oscillateur.stop(audio.currentTime + 0.15);
+    oscillateur.onended = () => audio.close();
+  } catch (e) {
+    console.log("Bip sonore indisponible", e);
+  }
+}
     function qrDetecte(texte) {
       if (traitementEnCours) return;
       traitementEnCours = true;
+      jouerBip();
 
       if (!/^\d+$/.test(texte)) {
         message.textContent =
