@@ -1,0 +1,95 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scanner QR</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 20px auto;
+      padding: 16px;
+      text-align: center;
+    }
+    h1 { font-size: 26px; }
+    #reader { width: 100%; margin: 20px auto; }
+    #message { margin: 20px 0; font-weight: bold; }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Scanner QR</h1>
+  <p>Place un QR code contenant uniquement des chiffres devant la caméra.</p>
+
+  <div id="reader"></div>
+  <p id="message">Initialisation du scanner…</p>
+  <button id="restart" hidden>Scanner un autre QR code</button>
+
+  <iframe name="envoi" style="display:none"></iframe>
+  <form id="formulaire"
+        method="GET"
+        action="https://script.google.com/macros/s/AKfycbwRl9SnJnoOJbiu-cPX9CUMoeWl55s3SEitoIsIDbWJppAYIOsHzzGg471YVAslx9kH/exec"
+        target="envoi">
+    <input type="hidden" name="code" id="code">
+  </form>
+
+  <script>
+    const message = document.getElementById("message");
+    const restart = document.getElementById("restart");
+    const scanner = new Html5QrcodeScanner("reader", {
+      fps: 10,
+      qrbox: { width: 250, height: 250 }
+    });
+
+    let traitementEnCours = false;
+
+    function qrDetecte(texte) {
+      if (traitementEnCours) return;
+      traitementEnCours = true;
+
+      if (!/^\d+$/.test(texte)) {
+        message.textContent =
+          "QR refusé : il doit contenir uniquement des chiffres.";
+        scanner.clear().then(() => {
+          restart.hidden = false;
+          traitementEnCours = false;
+        });
+        return;
+      }
+
+      message.textContent = "Envoi du numéro " + texte + "…";
+
+      scanner.clear().then(() => {
+        document.getElementById("code").value = texte;
+        document.getElementById("formulaire").submit();
+
+        message.textContent =
+          "Numéro " + texte +
+          " envoyé. Vérifie qu’il apparaît dans Google Sheets.";
+        restart.hidden = false;
+      }).catch(() => {
+        message.textContent =
+          "Impossible d’arrêter la caméra. Recharge la page.";
+      });
+    }
+
+    function demarrerScanner() {
+      restart.hidden = true;
+      traitementEnCours = false;
+      message.textContent = "Caméra en cours de démarrage…";
+      scanner.render(qrDetecte, () => {});
+    }
+
+    restart.addEventListener("click", demarrerScanner);
+    demarrerScanner();
+  </script>
+</body>
+</html>
+```
